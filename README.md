@@ -1,7 +1,13 @@
 
 The goal of this project was to train a neural network to clone the behaviour of a human driver - a process known as behavioural cloning.  We used the Udacity car simulator to collect training data by driving the car around a track. The simulator collected data as it was driven that consisted of 320x160 pixel RGB images from a front facing camera and the associated steering wheel angle.  Once trained the model could be loaded back into the simulator to control the steering angle based on a "live" feed of camera images.
 
-This report describes at a high level 3 failed attempts to train a model to perform this task, followed by a more detailed discussion of a successful fourth and fifth attempt.  I then summarise key learnings from the project.
+This report describes at a high level the first 3 attempts to train a model to perform this task - none of these efforts worked.  I then discuss in more detail a successful fourth and fifth attempt.  I then summarise key learnings from the project.
+
+Project deliverables include:
+
+*  The code for the final successful model training [here](https://github.com/mattwg/carnd-project3/blob/master/model-balanced.py) 
+*  A modified [drive.py](https://github.com/mattwg/carnd-project3/blob/master/drive.py)
+*  The [model.h5](https://github.com/mattwg/carnd-project3/blob/master/model.h5) and [model.json](https://github.com/mattwg/carnd-project3/blob/master/model.json) for my final successful model.
 
 # Data Collection
 
@@ -140,7 +146,7 @@ At this point I decided to check out the Slack channel!  I had previously been h
 * Apply small random lateral translations - both in X and Y direction
 * Randomly flip the images
 
-I also liked Vivek's idea to add an initial 3 1x1 filters in model to allow the model to determine the optimal combination of the RGB channels.  
+I also liked Vivek Yadav's idea to add an initial 3 1x1 filters in model to allow the model to determine the optimal combination of the RGB channels.  
 
 My generator now calls the `generate_image()` function which performs the image augmentation:
 
@@ -188,7 +194,7 @@ The third model had this architecture:
 
 <img src="resources/model3.png" width="700">
 
-During each epoch I could now increase the amount of training images - I set my batch size to 400 and the number of batches to 10000. Each epoch involved training on 4,000,000 augmented images.  This was a massive increase from models 1 and 2 that only had at most 20,697 images.  Trainined per epoch even with 4M images was quick on AWS - 5 epochs typically taking 2 minutes of run time.
+During each epoch I could now increase the amount of training images - I set my batch size to 400 and the number of batches to 10000. Each epoch involved training on 4,000,000 augmented images.  This was a massive increase from models 1 and 2 that only had at most 20,697 images.  Training per epoch even with 4M images was quick on AWS - 5 epochs typically taking 2 minutes of run time.  Training with a large number of images is also an effective way to stop overfitting - since it is difficult for the model to overfit on a large training set.
 
 I trained the model in 5 epoch increments, each time testing each model in the siumulator.   After 15 epochs my car could successfully drive across the bridge - but now the car went off the track at the sharp left hand bend after the bridge:
 
@@ -265,11 +271,13 @@ YouTubeVideo("5tUHK5-dCb0")
 
 
 
+### Link to YouTube video [here](https://www.youtube.com/watch?v=5tUHK5-dCb0).
+
 ### Model 5 - smoother cornering 
 
 Whilst model 4 had managed to navigate the track - it did make a pretty violent recovery on the first left hand bend after the bridge.  I am not sure I would have felt comfortable in such a self-driving vehicle!  I hypothesized that maybe my choice of binning threshold could be responsible for this - perhaps upweighting very extreme angles too much - leading to late recovery rather than gradual recovery.  I tried retraining with different bins.  
 
-I also experimented with dropout - in particular removing dropout entirely.  I got the smoothest driving by removing dropout and by changing the distribution of the bins to :  (-inf, < -0.5], (-0.5, -0.3], (-0.3, -0.1], (-0.1, 0.1], (0.1, 0.3], (0.3, 0.5], (0.5, inf).  
+I also experimented with dropout - in particular removing dropout entirely.  I got the smoothest driving by removing dropout and by reducing the number of bins :  (-inf, < -0.3], (-0.3, -0.1], (-0.1, 0.1], (0.1, 0.3], (0.3, inf).  
 
 Here is my final model performance:
 
@@ -293,7 +301,13 @@ YouTubeVideo("SnZaafoMqZc")
 
 
 
+Link to YouTube video [here](https://www.youtube.com/watch?v=SnZaafoMqZc)
+
 I suspect that the smoother driving when I removed dropout could be highlighting that that my model is either undertrained or has too small an architecture.  Further experiments would be required to ascertain the root cause - I would start by increasing the size of the fully connected layer and the convolutional layers.
+
+The model also performed very well on the second track - completing the majority of the track before slowing on a hill.  The performance on the second track is even more surprising since the model had not seen the track - demonstrating that the image augmentation is helping the model generalise well.
+
+The code to train model 5 can be seen [here on github](https://github.com/mattwg/carnd-project3/blob/master/model-balanced.py)
 
 ### Lessons Learnt
 
